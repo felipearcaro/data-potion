@@ -1,0 +1,5 @@
+snowflake-connector-python
+streamlit
+replicate
+python-decouple
+openai
