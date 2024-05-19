@@ -8,37 +8,6 @@ MODEL = {"Snowflake Arctic": ModelManager().get_arctic_response,
          "OpenAI": ModelManager().get_open_ai_response}
 
 
-DDL = """
-
--- Create customers table
-CREATE TABLE IF NOT EXISTS sales_data.customer_info.customers (
-    customer_id INT PRIMARY KEY COMMENT 'Unique identifier for each customer',
-    first_name STRING COMMENT 'First name of the customer',
-    last_name STRING COMMENT 'Last name of the customer',
-    email STRING
-);
-
--- Create products table
-CREATE TABLE IF NOT EXISTS sales_data.customer_info.products (
-    product_id INT PRIMARY KEY COMMENT 'Unique identifier for each product',
-    product_name STRING,
-    price FLOAT COMMENT 'Price of the product'
-);
-
--- Create orders table
--- Create orders table
-CREATE TABLE IF NOT EXISTS sales_data.customer_info.orders (
-    order_id INT PRIMARY KEY COMMENT 'Unique identifier for each order',
-    customer_id INT COMMENT 'Foreign key referencing the customer_id in customers table',
-    product_id INT,
-    order_date DATE COMMENT 'Date of the order',
-    FOREIGN KEY (customer_id) REFERENCES sales_data.customer_info.customers(customer_id),
-    FOREIGN KEY (product_id) REFERENCES sales_data.customer_info.products(product_id)
-);
-
-"""
-
-
 def main():
 
     st.set_page_config(page_title='Data Potion', page_icon=None,
@@ -80,7 +49,7 @@ def main():
                 st.write(
                     'You are a marketing rockstar! Let\'s get you some insights...')
                 query = MODEL[user_model](
-                    f'Based on this metadata {metadata} and these tables DDLs {DDL}, come up with a SQL query for this question {user_question}- make sure to use (schema_name.table_name) and answer ONLY with the SQL statement since it will be used to query snowflake directly.')
+                    f'Based on this metadata {metadata}, come up with a SQL query for this question {user_question}- make sure to use (schema_name.table_name) and answer ONLY with the SQL statement since it will be used to query snowflake directly.')
                 formated_query = query.replace('```sql', '').replace('```', '')
                 query_result = SnowflakeClient(user=user, account=account, password=password,
                                                role=role, warehouse=warehouse, database=database).execute_query(formated_query)
@@ -95,8 +64,10 @@ def main():
                 st.spinner('We are taking a look at your data metadata...')
                 st.write(
                     'You are a Data Geek! We got you covered...')
+                snowflake_metadata = SnowflakeClient(user=user, account=account, password=password,
+                                                     role=role, warehouse=warehouse, database=database).get_metadata()
                 suggested_metadata = MODEL[user_model](
-                    f'Based on this DDLs {DDL}, can you return a table containing table name, column name, current description/comment, suggested description/comment? Use the table name and column name to figure out the context of the description')
+                    f'Based on this metadata {snowflake_metadata}, can you return a table containing table name, column name, current description/comment, suggested description/comment? Use the table name and column name to figure out the context of the description')
                 st.subheader('Metadata analysis')
                 st.write(
                     'It seems like your metadata could use some improvement. I mean, we will use it to give your customers the best answer after all!')
@@ -104,7 +75,7 @@ def main():
                 st.divider()
                 st.spinner('We are working on your query...')
                 query = MODEL[user_model](
-                    f'Based on this metadata {metadata} and these tables DDLs {DDL}, come up with a SQL query for this question - make sure to use (schema_name.table_name) and answer ONLY with the SQL statement since it will be used to query snowflake directly: {user_question}. Also, the SQL should contain either one or two columns only to be shown on a graph')
+                    f'Based on this metadata {metadata}, come up with a SQL query for this question - make sure to use (schema_name.table_name) and answer ONLY with the SQL statement since it will be used to query snowflake directly: {user_question}. Also, the SQL should contain either one or two columns only to be shown on a graph')
                 st.subheader('Query suggestion')
                 st.write('Here is the suggested SQL query to answer your question')
                 formated_query = query.replace('```sql', '').replace('```', '')

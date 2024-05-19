@@ -40,6 +40,8 @@ class ModelManager():
                 str: Model response
             """
         answer = ''
+        replicate_api_token = config('REPLICATE_API_TOKEN')
+        api = replicate.Client(api_token=replicate_api_token)
         for event in replicate.stream(
             "snowflake/snowflake-arctic-instruct",
             input={
